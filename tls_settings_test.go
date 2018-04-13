@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/interop/grpc_testing"
 
-	. "github.com/fullstorydev/grpcurl"
-	grpcurl_testing "github.com/fullstorydev/grpcurl/testing"
+	. "github.com/tgrpc/grpcurl"
+	grpcurl_testing "github.com/tgrpc/grpcurl/testing"
 )
 
 func TestPlainText(t *testing.T) {
