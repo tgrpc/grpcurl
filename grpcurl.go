@@ -828,6 +828,8 @@ func ClientTransportCredentials(insecureSkipVerify bool, cacertFile, clientCertF
 		}
 
 		tlsConf.RootCAs = certPool
+	} else {
+		return nil, nil
 	}
 
 	return credentials.NewTLS(&tlsConf), nil
