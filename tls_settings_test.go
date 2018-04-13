@@ -285,10 +285,11 @@ func simpleTest(t *testing.T, cc *grpc.ClientConn) {
 	cl := grpc_testing.NewTestServiceClient(cc)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	_, err := cl.UnaryCall(ctx, &grpc_testing.SimpleRequest{}, grpc.FailFast(false))
+	resp, err := cl.UnaryCall(ctx, &grpc_testing.SimpleRequest{Payload: &grpc_testing.Payload{Body: []byte("Payload")}}, grpc.FailFast(false))
 	if err != nil {
 		t.Errorf("simple RPC failed: %v", err)
 	}
+	fmt.Println("resp:", resp)
 }
 
 func createTestServerAndClient(serverCreds, clientCreds credentials.TransportCredentials) (testEnv, error) {

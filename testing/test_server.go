@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"fmt"
 	"io"
 	"strconv"
 	"time"
@@ -39,6 +40,7 @@ func (TestServer) UnaryCall(ctx context.Context, req *grpc_testing.SimpleRequest
 	headers, trailers, failEarly, failLate := processMetadata(ctx)
 	grpc.SetHeader(ctx, headers)
 	grpc.SetTrailer(ctx, trailers)
+	fmt.Println("req", *req)
 	if failEarly != codes.OK {
 		return nil, status.Error(failEarly, "fail")
 	}
