@@ -266,7 +266,7 @@ type InvocationEventHandler interface {
 	// OnReceiveHeaders is called when response headers have been received.
 	OnReceiveHeaders(metadata.MD)
 	// OnReceiveResponse is called for each response message received.
-	OnReceiveResponse(proto.Message)
+	OnReceiveResponse(metadata.MD, proto.Message)
 	// OnReceiveTrailers is called when response trailers and final RPC status have been received.
 	OnReceiveTrailers(*status.Status, metadata.MD)
 }
@@ -339,18 +339,18 @@ func InvokeRpc(ctx context.Context, source DescriptorSource, cc *grpc.ClientConn
 	defer cancel()
 
 	if mtd.IsClientStreaming() && mtd.IsServerStreaming() {
-		return invokeBidi(ctx, cancel, stub, mtd, handler, requestData, req)
+		return invokeBidi(ctx, cancel, stub, mtd, handler, requestData, req, md)
 	} else if mtd.IsClientStreaming() {
-		return invokeClientStream(ctx, stub, mtd, handler, requestData, req)
+		return invokeClientStream(ctx, stub, mtd, handler, requestData, req, md)
 	} else if mtd.IsServerStreaming() {
-		return invokeServerStream(ctx, stub, mtd, handler, requestData, req)
+		return invokeServerStream(ctx, stub, mtd, handler, requestData, req, md)
 	} else {
-		return invokeUnary(ctx, stub, mtd, handler, requestData, req)
+		return invokeUnary(ctx, stub, mtd, handler, requestData, req, md)
 	}
 }
 
 func invokeUnary(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDescriptor, handler InvocationEventHandler,
-	requestData RequestMessageSupplier, req proto.Message) error {
+	requestData RequestMessageSupplier, req proto.Message, respMd metadata.MD) error {
 
 	data, err := requestData()
 	if err != nil && err != io.EOF {
@@ -387,7 +387,7 @@ func invokeUnary(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDesc
 	handler.OnReceiveHeaders(respHeaders)
 
 	if stat.Code() == codes.OK {
-		handler.OnReceiveResponse(resp)
+		handler.OnReceiveResponse(respMd, resp)
 	}
 
 	handler.OnReceiveTrailers(stat, respTrailers)
@@ -396,7 +396,7 @@ func invokeUnary(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDesc
 }
 
 func invokeClientStream(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDescriptor, handler InvocationEventHandler,
-	requestData RequestMessageSupplier, req proto.Message) error {
+	requestData RequestMessageSupplier, req proto.Message, respMd metadata.MD) error {
 
 	// invoke the RPC!
 	str, err := stub.InvokeRpcClientStream(ctx, md)
@@ -444,7 +444,7 @@ func invokeClientStream(ctx context.Context, stub grpcdynamic.Stub, md *desc.Met
 	}
 
 	if stat.Code() == codes.OK {
-		handler.OnReceiveResponse(resp)
+		handler.OnReceiveResponse(respMd, resp)
 	}
 
 	handler.OnReceiveTrailers(stat, str.Trailer())
@@ -453,7 +453,7 @@ func invokeClientStream(ctx context.Context, stub grpcdynamic.Stub, md *desc.Met
 }
 
 func invokeServerStream(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDescriptor, handler InvocationEventHandler,
-	requestData RequestMessageSupplier, req proto.Message) error {
+	requestData RequestMessageSupplier, req proto.Message, respMd metadata.MD) error {
 
 	data, err := requestData()
 	if err != nil && err != io.EOF {
@@ -492,7 +492,7 @@ func invokeServerStream(ctx context.Context, stub grpcdynamic.Stub, md *desc.Met
 			}
 			break
 		}
-		handler.OnReceiveResponse(resp)
+		handler.OnReceiveResponse(respMd, resp)
 	}
 
 	stat, ok := status.FromError(err)
@@ -508,7 +508,7 @@ func invokeServerStream(ctx context.Context, stub grpcdynamic.Stub, md *desc.Met
 }
 
 func invokeBidi(ctx context.Context, cancel context.CancelFunc, stub grpcdynamic.Stub, md *desc.MethodDescriptor, handler InvocationEventHandler,
-	requestData RequestMessageSupplier, req proto.Message) error {
+	requestData RequestMessageSupplier, req proto.Message, respMd metadata.MD) error {
 
 	// invoke the RPC!
 	str, err := stub.InvokeRpcBidiStream(ctx, md)
@@ -573,7 +573,7 @@ func invokeBidi(ctx context.Context, cancel context.CancelFunc, stub grpcdynamic
 			}
 			break
 		}
-		handler.OnReceiveResponse(resp)
+		handler.OnReceiveResponse(respMd, resp)
 	}
 
 	if se, ok := sendErr.Load().(error); ok && se != io.EOF {

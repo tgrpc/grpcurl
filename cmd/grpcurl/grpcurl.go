@@ -503,7 +503,7 @@ func (*handler) OnReceiveHeaders(md metadata.MD) {
 	}
 }
 
-func (h *handler) OnReceiveResponse(resp proto.Message) {
+func (h *handler) OnReceiveResponse(md metadata.MD, resp proto.Message) {
 	h.respCount++
 	if *verbose {
 		fmt.Print("\nResponse contents:\n")
