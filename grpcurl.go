@@ -384,6 +384,9 @@ func invokeUnary(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDesc
 		return fmt.Errorf("grpc call for %q failed: %v", md.GetFullyQualifiedName(), err)
 	}
 
+	if hTgrpc, ok := respMd["_tgrpc"]; ok {
+		respHeaders["_tgrpc"] = hTgrpc
+	}
 	handler.OnReceiveHeaders(respHeaders)
 
 	if stat.Code() == codes.OK {
