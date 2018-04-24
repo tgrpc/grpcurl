@@ -385,6 +385,9 @@ func invokeUnary(ctx context.Context, stub grpcdynamic.Stub, md *desc.MethodDesc
 	}
 
 	if hTgrpc, ok := respMd["_tgrpc"]; ok {
+		if respHeaders == nil {
+			respHeaders = make(map[string][]string)
+		}
 		respHeaders["_tgrpc"] = hTgrpc
 	}
 	handler.OnReceiveHeaders(respHeaders)
